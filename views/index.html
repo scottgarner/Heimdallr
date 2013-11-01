@@ -1,0 +1,49 @@
+
+<style>
+body{
+	font-family: "Helvetica-Light", sans-serif;
+	color: #666;
+}
+th, td {
+	text-align: left;
+	padding: 2px 8px;
+	font-size: 18px;	
+}
+</style>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+<script>
+
+$(document).ready( function() {
+
+	$.ajax({
+		url: "/networks",
+		dataType: "json",
+		complete: function (data) {
+			$(data.responseJSON).each( function (key,value) {
+				var row = $("<tr/>")
+					.append($("<td/>").html(value.ssid))
+					.append($("<td/>").html(value.bssid))
+					.append($("<td/>").html(value.channel))
+					.append($("<td/>").html(value.rssi))					
+					.append($("<td/>").html(value.noise));
+				$("#networks").append(row);
+			});
+		}
+	})
+
+});
+
+</script>
+
+<table id="networks">
+	<tr>
+		<th>SSID</th>
+		<th>BSSID</th>
+		<th>Channel</th>
+		<th>RSSI</th>
+		<th>Noise</th>
+	</th>
+</table>
