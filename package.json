@@ -1,0 +1,10 @@
+{
+  "name": "heimdaller",
+  "dependencies": {
+    "express": ">= 3.4.4",
+    "ejs": "latest",
+    "plist": "latest",
+    "node-osc": "latest"
+  },
+  "engine": "node 0.10.21"
+}
