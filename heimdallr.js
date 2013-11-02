@@ -6,7 +6,9 @@ var plist = require('plist');
 var osc = require('node-osc');
 var client = new osc.Client('127.0.0.1', 9001);
 
-var airport = '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport';
+var airport = '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -s -x';
+var iwlist = "iwlist wlan0 scan";
+
 var voices = 9.0;
 
 var networks = [];
@@ -47,7 +49,40 @@ var networks = [];
 
  	console.log("Scanning networks...");
 
+ 	osxScan();
+
+}
+
+function send(networks) {
+
+    var step = parseInt(networks.length/voices);
+	for (var i = 0; i < voices; i++) {
+		var index =  step * i;
+		var ap = networks[index];
+
+		var note = parseInt((ap.quality * (89 - 31)) + 31);
+		client.send('/voice', i,  ap.ssid,  ap.quality, note); 	
+	}
+
+}
+
+function scan() {
+
+	switch (process.platform) {
+		case 'darwin':
+		return osxScan();
+		case 'linux':
+		return linuxScan();
+		default:
+		return -1;
+	}
+
+}
+
+function osxScan() {
+
  	exec(airport + ' -s -x', {maxBuffer: 500*1024}, function(err, stdout, stderr){
+ 		
  		if (err) {
  			console.log("Error encountered.");
  			return;
@@ -67,45 +102,50 @@ var networks = [];
 
  		console.log("Sending data.");
 
- 		networks = [];
- 		var step = parseInt(scanData.length/voices);
- 		for (var i = 0; i < voices; i++) {
- 			var index =  step * i;
- 			var ap = scanData[index];
+ 		var networks = [];
 
-        	//ap.SSID
-        	//ap.SSID_STR
-        	//ap.NOISE
-        	//ap.RSSI
-        	//ap.BSSID
-        	//ap.CHANNEL
-        
-        	var network = {
-        		ssid: ap.SSID,
+ 		for (var i = 0; i < scanData.length; i++) {
+ 			var ap = scanData[i];
+
+			var quality;
+			if(ap.RSSI <= -100)
+				quality = 0;
+			else if(ap.RSSI >= -50)
+				quality = 100;
+			else
+				quality = 2 * (ap.RSSI + 100);	     
+			quality /= 100.0;   	
+
+			var network = {
+				ssid: ap.SSID,
 				bssid: ap.BSSID,
 				channel: ap.CHANNEL,
 				rssi: ap.RSSI,					
-				noise: ap.NOISE
-        	}
+				noise: ap.NOISE,
+				quality: quality
+			}
 
-        	networks.push(network);
+			networks.push(network);
+		}
 
-        	var quality;
+		send(networks);
 
-        	if(ap.RSSI <= -100)
-        		quality = 0;
-        	else if(ap.RSSI >= -50)
-        		quality = 100;
-        	else
-        		quality = 2 * (ap.RSSI + 100);	     
+	});
+}
 
-        	quality /= 100.0;   	
-        	var note = parseInt((quality * (89 - 31)) + 31);
-        	//var note = quality;
+function linuxScan() {
 
-        	client.send('/voice', i,  ap.SSID,  quality, note);
+ 	exec(iwlist, {maxBuffer: 500*1024}, function(err, stdout, stderr) {
 
-        }
-    });
+ 		if (err) {
+ 			console.log("Error encountered.");
+ 			return;
+ 		}
+
+		for (var i=0; i<out.length; i++) {
+			var line = out[i].trim();
+		}
+
+ 	});
 
 }
