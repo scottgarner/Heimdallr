@@ -1,13 +1,13 @@
+"use strict";
+
 var http = require('http');
 var path = require('path');
-var exec = require('child_process').exec;
-var plist = require('plist');
 
 var osc = require('node-osc');
 var client = new osc.Client('127.0.0.1', 9001);
 
-var airport = '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -s -x';
-var iwlist = "iwlist wlan0 scan";
+var darwin = require('./darwin');
+var linux = require('./linux');
 
 var voices = 9.0;
 
@@ -68,117 +68,12 @@ function send(networks) {
 function scan() {
 	switch (process.platform) {
 		case 'darwin':
-		return osxScan();
+			return darwin.scan(send);
 		case 'linux':
-		return linuxScan();
+			return linux.scan(send);
 		default:
-		return -1;
+			console.error('Incompatible system.')
+			process.exit(1);
 	}
-
-}
-
-function osxScan() {
-
- 	exec(airport + ' -s -x', {maxBuffer: 500*1024}, function(err, stdout, stderr){
- 		
- 		if (err) {
- 			console.log("Error encountered.");
- 			return;
- 		}
-
- 		var scanData;
- 		try {
- 			scanData = plist.parseStringSync(stdout);
- 		} catch (e) {
- 			console.log("Error encountered during parse.");
- 			return;
- 		}
-
- 		console.log( "Found " + scanData.length + " networks.");
- 		scanData = scanData.sort(function(a, b) {return b.RSSI - a.RSSI});
- 		if (scanData.length <= 0) return;
-
- 		console.log("Sending data.");
-
- 		var networks = [];
-
- 		for (var i = 0; i < scanData.length; i++) {
- 			var ap = scanData[i];
-
-			var quality;
-			if(ap.RSSI <= -100)
-				quality = 0;
-			else if(ap.RSSI >= -50)
-				quality = 100;
-			else
-				quality = 2 * (ap.RSSI + 100);	     
-			quality /= 100.0;   	
-
-			var network = {
-				ssid: ap.SSID,
-				bssid: ap.BSSID,
-				channel: ap.CHANNEL,
-				rssi: ap.RSSI,					
-				noise: ap.NOISE,
-				quality: quality
-			}
-
-			networks.push(network);
-		}
-
-		send(networks);
-
-	});
-}
-
-// Influenced by https://github.com/mauricesvay/node-wifiscanner/
-
-function linuxScan() {
-
-    var patterns = {
-        'bssid' : /^Cell \d+ - Address: (.*)/,
-        'ssid' : /^ESSID:"(.*)"/,
-        'quality' : /Quality(?:=|\:)([-\w]+)/,
-        'rssi' : /Signal level(?:=|\:)([-\w]+)/
-    };
-
- 	exec(iwlist, {maxBuffer: 500*1024}, function(err, stdout, stderr) {
-
- 		if (err) {
- 			console.log("Error encountered.");
- 			return;
- 		}
-
- 		var ap = {};
- 		var networks = [];
-
- 		stdout = stdout.split('\n');
-		for (var i=0; i<stdout.length; i++) {
-			var line = stdout[i].trim();
-
-
-			if (line.match(patterns.bssid)) {
-            	networks.push(ap);
-            	ap = {};
-        	}
-
-	        for (var pattern in patterns) {
-	            if (line.match(patterns[pattern])) {
-	                ap[pattern] = (patterns[pattern].exec(line)[1]).trim();
-
-	                if (pattern == "quality") {
-	                	ap[pattern] /= 100.0;
-	                }
-	            }
-	        }        	
-
-		}
-
-		networks.push(ap);
-		networks.shift();
-
-		send(networks);
-
- 	});
 
 }
