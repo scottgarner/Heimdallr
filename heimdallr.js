@@ -48,8 +48,7 @@ var networks = [];
  function update() {
 
  	console.log("Scanning networks...");
-
- 	osxScan();
+ 	scan();
 
 }
 
@@ -67,7 +66,6 @@ function send(networks) {
 }
 
 function scan() {
-
 	switch (process.platform) {
 		case 'darwin':
 		return osxScan();
@@ -133,7 +131,16 @@ function osxScan() {
 	});
 }
 
+// Influenced by https://github.com/mauricesvay/node-wifiscanner/
+
 function linuxScan() {
+
+    var patterns = {
+        'bssid' : /^Cell \d+ - Address: (.*)/,
+        'ssid' : /^ESSID:"(.*)"/,
+        'quality' : /Quality(?:=|\:)([-\w]+)/,
+        'rssi' : /Signal level(?:=|\:)([-\w]+)/
+    };
 
  	exec(iwlist, {maxBuffer: 500*1024}, function(err, stdout, stderr) {
 
@@ -142,9 +149,35 @@ function linuxScan() {
  			return;
  		}
 
-		for (var i=0; i<out.length; i++) {
-			var line = out[i].trim();
+ 		var ap = {};
+ 		var networks = [];
+
+ 		stdout = stdout.split('\n');
+		for (var i=0; i<stdout.length; i++) {
+			var line = stdout[i].trim();
+
+
+			if (line.match(patterns.bssid)) {
+            	networks.push(ap);
+            	ap = {};
+        	}
+
+	        for (var pattern in patterns) {
+	            if (line.match(patterns[pattern])) {
+	                ap[pattern] = (patterns[pattern].exec(line)[1]).trim();
+
+	                if (pattern == "quality") {
+	                	ap[pattern] /= 100.0;
+	                }
+	            }
+	        }        	
+
 		}
+
+		networks.push(ap);
+		networks.shift();
+
+		send(networks);
 
  	});
 
