@@ -11,7 +11,7 @@ var linux = require('./linux');
 
 var voices = 9.0;
 
-var networks = [];
+var networkCache = [];
 
 /**
  * Express Setup
@@ -31,19 +31,15 @@ var networks = [];
  });
 
  app.get('/networks', function (req, res) {
- 	res.send(JSON.stringify(networks, null, 4));
+ 	res.send(JSON.stringify(networkCache, null, 4));
  });
 
  http.createServer(app).listen(app.get('port'), function(){
  	console.log('Express server listening on port ' + app.get('port'));
- 	update();
  });
 
- setInterval(function() {
-
- 	update();
-
- }, 10000);
+ update();
+ setInterval(update, 10000);
 
  function update() {
 
@@ -53,6 +49,7 @@ var networks = [];
 }
 
 function send(networks) {
+    networkCache = networks;
 
     var step = parseInt(networks.length/voices);
 	for (var i = 0; i < voices; i++) {

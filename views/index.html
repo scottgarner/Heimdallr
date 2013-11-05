@@ -24,6 +24,7 @@ $(document).ready( function() {
 		complete: function (data) {
 			$(data.responseJSON).each( function (key,value) {
 				var row = $("<tr/>")
+					.append($("<td/>").html(key))
 					.append($("<td/>").html(value.ssid))
 					.append($("<td/>").html(value.bssid))
 					.append($("<td/>").html(value.channel))
@@ -40,6 +41,7 @@ $(document).ready( function() {
 
 <table id="networks">
 	<tr>
+		<th>Index</th>
 		<th>SSID</th>
 		<th>BSSID</th>
 		<th>Channel</th>
