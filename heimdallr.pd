@@ -1,10 +1,10 @@
-#N canvas 621 529 776 314 10;
+#N canvas 21 494 776 314 10;
 #X declare -lib mrpeach;
 #X obj 31 26 import mrpeach;
 #X obj 298 30 udpreceive 9001;
 #X obj 298 63 unpackOSC;
 #X obj 298 96 routeOSC /voice;
-#X obj 181 61 dac~;
+#X obj 124 98 dac~;
 #X obj 243 99 print;
 #X obj 126 28 catch~ left;
 #X obj 202 29 catch~ right;
@@ -29,12 +29,13 @@
 #X obj 679 256 throw~ left;
 #X msg 679 46 \; pd dsp 1;
 #X obj 679 23 loadbang;
+#X obj 125 67 freeverb~;
 #X connect 1 0 2 0;
 #X connect 2 0 3 0;
 #X connect 2 0 5 0;
 #X connect 3 0 8 0;
-#X connect 6 0 4 0;
-#X connect 7 0 4 1;
+#X connect 6 0 29 0;
+#X connect 7 0 29 1;
 #X connect 8 0 9 0;
 #X connect 8 1 11 0;
 #X connect 8 2 13 0;
@@ -54,3 +55,5 @@
 #X connect 23 0 24 0;
 #X connect 25 0 26 0;
 #X connect 28 0 27 0;
+#X connect 29 0 4 0;
+#X connect 29 1 4 1;
